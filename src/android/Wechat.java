@@ -24,7 +24,7 @@ import com.tencent.mm.sdk.openapi.WXAPIFactory;
 
 public class Wechat extends CordovaPlugin {
 
-	public static final String WXAPPID_PROPERTY_KEY = "wechatappid";
+//	public static final String WXAPPID_PROPERTY_KEY = "wechatappid";
 
 	public static final String ERROR_WX_NOT_INSTALLED = "Not installed";
 	public static final String ERROR_ARGUMENTS = "Argument Error";
@@ -67,10 +67,13 @@ public class Wechat extends CordovaPlugin {
 	public static IWXAPI wxAPI;
 	public static CallbackContext currentCallbackContext;
 
+	private String APPID;
+
 	@Override
 	public boolean execute(String action, JSONArray args,
 			CallbackContext callbackContext) throws JSONException {
 		
+		APPID = getAPPID(args);
 		if (action.equals("share")) {
 			// sharing
 			return share(args, callbackContext);
@@ -84,14 +87,37 @@ public class Wechat extends CordovaPlugin {
 			return isInstalled(callbackContext);
 		}
 
-
 		return super.execute(action, args, callbackContext);
 	}
+	
+	public static JSONObject getObjectFromArray(JSONArray jsonArray,
+            int objectIndex) {
+        JSONObject jsonObject = null;
+        if (jsonArray != null && jsonArray.length() > 0) {
+            try {
+                jsonObject = new JSONObject(jsonArray.get(objectIndex)
+                        .toString());
+            } catch (JSONException e) {
+
+            }
+        }
+        return jsonObject;
+    }
+
+    public static String getAPPID(JSONArray ary) {
+        String result = null;
+        try {
+        	result = ary.getString(0);
+            //result = getObjectFromArray(ary, 0).getString("appid");
+        } catch (JSONException e) {
+
+        }
+        return result;
+    }
 
 	protected IWXAPI getWXAPI() {
 		if (wxAPI == null) {
-			String appId = webView.getProperty(WXAPPID_PROPERTY_KEY, "");
-			wxAPI = WXAPIFactory.createWXAPI(webView.getContext(), appId, true);
+			wxAPI = WXAPIFactory.createWXAPI(webView.getContext(), APPID, true);
 		}
 
 		return wxAPI;
@@ -100,14 +126,14 @@ public class Wechat extends CordovaPlugin {
 	protected boolean sendAuthRequest(JSONArray args, CallbackContext callbackContext)
 	{
 		final IWXAPI api = getWXAPI();
-		api.registerApp(webView.getProperty(WXAPPID_PROPERTY_KEY, ""));
+		api.registerApp(APPID);
 		final SendAuth.Req req = new SendAuth.Req();
 		req.state = "wechat_auth";
 		
 		// check if # of arguments is correct
-		if (args.length() > 0) {
+		if (args.length() > 1) {
 			try {
-				req.scope = args.getString(0);
+				req.scope = args.getString(1);
 			} catch (Exception e) {
 				Log.e(Wechat.class.getName()
 						, "sendAuthRequest parameter parsing failure"
@@ -128,7 +154,7 @@ public class Wechat extends CordovaPlugin {
 			throws JSONException {
 		final IWXAPI api = getWXAPI();
 
-		api.registerApp(webView.getProperty(WXAPPID_PROPERTY_KEY, ""));
+		api.registerApp(APPID);
 
 		// check if installed
 		if (!api.isWXAppInstalled()) {
@@ -137,11 +163,11 @@ public class Wechat extends CordovaPlugin {
 		}
 
 		// check if # of arguments is correct
-		if (args.length() != 1) {
+		if (args.length() != 2) {
 			callbackContext.error(ERROR_ARGUMENTS);
 		}
 
-		final JSONObject params = args.getJSONObject(0);
+		final JSONObject params = args.getJSONObject(1);
 		final SendMessageToWX.Req req = new SendMessageToWX.Req();
 		req.transaction = buildTransaction(null);
 
@@ -184,7 +210,7 @@ public class Wechat extends CordovaPlugin {
 
 	protected boolean isInstalled(CallbackContext callbackContext){
 		final IWXAPI api = getWXAPI();
-		api.registerApp(webView.getProperty(WXAPPID_PROPERTY_KEY, ""));
+		api.registerApp(APPID);
 
 		if (!api.isWXAppInstalled()) {
 			callbackContext.error(ERROR_WX_NOT_INSTALLED);
