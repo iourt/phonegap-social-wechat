@@ -1,7 +1,7 @@
 {
     "version": "1.0.0",
-    "name": "com.tangram.qq",
-    "cordova_name": "wechat",
+    "name": "com.tangram.wechat",
+    "cordova_name": "Wechat",
     "description": "wechat plugin for cordova",
     "platforms": [
         "android"
